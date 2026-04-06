@@ -26,21 +26,63 @@ function formatItineraryText(it: ItineraryData): string {
 }
 
 async function createShareLink(itinerary: ItineraryData): Promise<string> {
-  const { data, error } = await supabase.functions.invoke("share-trip", {
-    body: { itinerary, title: itinerary.title },
-  });
+  try {
+    const { data, error } = await supabase.functions.invoke("share-trip", {
+      body: { itinerary, title: itinerary.title },
+    });
 
-  console.log("share-trip response:", { data, error });
+    console.log("share-trip response:", { data, error });
 
-  if (error) throw error;
+    if (error) {
+      throw new Error(`Server error: ${error.message || JSON.stringify(error)}`);
+    }
 
-  // Handle different SDK response shapes
-  const shareCode = data?.shareCode ?? data?.data?.shareCode;
-  if (!shareCode) {
-    throw new Error("No share code returned from server");
+    if (!data) {
+      throw new Error("No data returned from server");
+    }
+
+    // Extract share code - handle various response formats
+    const shareCode = data?.shareCode || data?.share_code;
+    
+    if (!shareCode || typeof shareCode !== 'string') {
+      console.error("Invalid share code:", { data, shareCode });
+      throw new Error("Invalid share code returned from server");
+    }
+
+    // Verify the trip was actually saved to avoid "Trip not found" on fresh link
+    let verified = false;
+    for (let i = 0; i < 3; i++) {
+      const { data: verification } = await supabase
+        .from("shared_trips")
+        .select("id")
+        .eq("share_code", shareCode)
+        .maybeSingle();
+      
+      if (verification) {
+        verified = true;
+        console.log("Trip verified in database");
+        break;
+      }
+      
+      console.log(`Verification attempt ${i + 1}/3 - trip not found yet, retrying...`);
+      // Wait 100ms before retry
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    if (!verified) {
+      console.warn("Trip could not be verified in database after 3 attempts");
+    }
+
+    // Construct the full URL
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/trip/${encodeURIComponent(shareCode)}`;
+    
+    console.log("Generated share link:", url);
+    return url;
+  } catch (err) {
+    console.error("Share link creation failed:", err);
+    throw err;
   }
-
-  return `${window.location.origin}/trip/${shareCode}`;
 }
 
 function fallbackCopy(value: string): boolean {

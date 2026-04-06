@@ -1,4 +1,4 @@
-import { lazy, Suspense, Component, ReactNode, useState, useMemo } from "react";
+import { lazy, Suspense, Component, ReactNode, useState, useMemo, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MessageSquare, Send, MapPin, Luggage, Users, Trash2 } from "lucide-react";
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragOverlay, DragStartEvent } from "@dnd-kit/core";
@@ -181,7 +181,13 @@ function CommentsSection({ tripId, initialComments }: { tripId: string; initialC
 export default function SharedTrip() {
   const { shareCode } = useParams<{ shareCode: string }>();
   const navigate = useNavigate();
-  const { itinerary, title, tripId, loading, onlineUsers, updateItinerary } = useCollaborativeTrip(shareCode);
+  
+  // Debug logging
+  useEffect(() => {
+    console.log("SharedTrip component mounted with shareCode:", shareCode);
+  }, [shareCode]);
+  
+  const { itinerary, title, tripId, loading, onlineUsers, updateItinerary, error } = useCollaborativeTrip(shareCode);
   const { weather } = useWeather(itinerary);
   const [comments, setComments] = useState<Comment[]>([]);
   const [commentsLoaded, setCommentsLoaded] = useState(false);
@@ -193,33 +199,30 @@ export default function SharedTrip() {
   );
 
   // Load comments once tripId is available
-  useState(() => {
+  useEffect(() => {
     if (tripId && !commentsLoaded) {
+      console.log("Loading comments for tripId:", tripId);
       supabase
         .from("trip_comments")
         .select("*")
         .eq("shared_trip_id", tripId)
         .order("created_at", { ascending: true })
-        .then(({ data }) => {
-          setComments((data as Comment[]) || []);
+        .then(({ data, error }) => {
+          if (error) {
+            console.error("Error loading comments:", error);
+          } else {
+            console.log("Comments loaded:", data?.length || 0);
+            setComments((data as Comment[]) || []);
+          }
           setCommentsLoaded(true);
         });
     }
-  });
+  }, [tripId, commentsLoaded]);
 
-  // Re-fetch comments when tripId changes
-  const [prevTripId, setPrevTripId] = useState("");
-  if (tripId && tripId !== prevTripId) {
+  // Remove the broken old comment loading code
+  const [prevTripId, setPrevTripId] = (useState as any)("");
+  if (tripId && tripId !== prevTripId && commentsLoaded) {
     setPrevTripId(tripId);
-    supabase
-      .from("trip_comments")
-      .select("*")
-      .eq("shared_trip_id", tripId)
-      .order("created_at", { ascending: true })
-      .then(({ data }) => {
-        setComments((data as Comment[]) || []);
-        setCommentsLoaded(true);
-      });
   }
 
   const symbol = itinerary ? (currencySymbols[itinerary.currency] || itinerary.currency || "$") : "$";
@@ -293,7 +296,8 @@ export default function SharedTrip() {
         <div className="text-center px-4">
           <MapPin className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
           <h2 className="text-xl font-display font-bold text-foreground mb-2">Trip not found</h2>
-          <p className="text-muted-foreground mb-4">This share link may be invalid or expired.</p>
+          <p className="text-muted-foreground mb-2">{error || "This share link may be invalid or expired."}</p>
+          {shareCode && <p className="text-xs text-muted-foreground mb-4 font-mono break-all">Share code: {shareCode}</p>}
           <Button onClick={() => navigate("/")} className="rounded-2xl earth-gradient">Plan Your Own Trip</Button>
         </div>
       </div>
