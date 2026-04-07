@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+removeimport React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,12 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ tripId }) => {
   const [loading, setLoading] = useState(false);
   const [reactions, setReactions] = useState<Record<string, number>>({});
 
-  // Load comments
+  // Only load comments for authenticated (non-anonymous) users
   useEffect(() => {
+    if (user?.user_metadata?.is_anonymous) {
+      return;
+    }
+    
     const loadComments = async () => {
       try {
         const { data, error: err } = await supabase

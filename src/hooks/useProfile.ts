@@ -21,12 +21,12 @@ export interface UserProfile {
 export const useProfile = () => {
   const { user } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch profile on mount or when user changes
+  // For anonymous users, don't fetch profile
   useEffect(() => {
-    if (!user) {
+    if (!user || user.user_metadata?.is_anonymous) {
       setProfile(null);
       setLoading(false);
       return;
@@ -36,7 +36,7 @@ export const useProfile = () => {
   }, [user?.id]);
 
   const fetchProfile = async () => {
-    if (!user) return;
+    if (!user || user.user_metadata?.is_anonymous) return;
 
     try {
       setLoading(true);

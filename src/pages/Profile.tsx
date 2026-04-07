@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
@@ -12,20 +12,13 @@ import { toast } from 'sonner';
 
 export default function Profile() {
   const navigate = useNavigate();
-  const { user, signOut, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { profile, loading: profileLoading } = useProfile();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate('/login');
-    }
-  }, [user, authLoading, navigate]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-      await signOut();
       toast.success('You have been logged out');
       navigate('/');
     } catch (error) {
@@ -35,7 +28,7 @@ export default function Profile() {
     }
   };
 
-  const loading = authLoading || profileLoading;
+  const loading = profileLoading;
 
   if (loading) {
     return (

@@ -49,7 +49,7 @@ export const useTrips = () => {
 
   // Fetch all user trips
   const fetchUserTrips = useCallback(async () => {
-    if (!user) {
+    if (!user || user.user_metadata?.is_anonymous) {
       setTrips([]);
       setLoading(false);
       return;

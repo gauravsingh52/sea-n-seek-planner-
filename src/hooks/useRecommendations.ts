@@ -57,7 +57,7 @@ export const useRecommendations = () => {
 
   // Fetch user travel preferences
   const fetchPreferences = useCallback(async () => {
-    if (!user) {
+    if (!user || user.user_metadata?.is_anonymous) {
       setLoading(false);
       return;
     }
