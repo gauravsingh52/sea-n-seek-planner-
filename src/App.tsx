@@ -13,6 +13,7 @@ import SavedTrips from "./pages/SavedTrips";
 import SharedTrip from "./pages/SharedTrip";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/login" element={<ProtectedRoute requireAuth={false}><Login /></ProtectedRoute>} />
               <Route path="/signup" element={<ProtectedRoute requireAuth={false}><Signup /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
               <Route path="/itinerary" element={<ProtectedRoute><Itinerary /></ProtectedRoute>} />
               <Route path="/saved" element={<ProtectedRoute><SavedTrips /></ProtectedRoute>} />
               <Route path="/trip/:shareCode" element={<SharedTrip />} />
