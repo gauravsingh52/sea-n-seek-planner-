@@ -6,7 +6,7 @@ const ONBOARDING_KEY = "tripmap_onboarded";
 
 const STEPS = [
   {
-    title: "Welcome to TripMap Planner! 🗺️",
+    title: "Welcome to TripMap Planner.ai! 🗺️",
     description: "Plan trips anywhere — just type your destination and let AI handle the rest.",
   },
   {

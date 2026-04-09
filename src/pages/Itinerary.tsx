@@ -228,7 +228,7 @@ export default function Itinerary() {
             </div>
             <h2 className="text-2xl font-display font-bold gradient-text mb-3 animate-slide-up-fade" style={{ animationDelay: "0.15s" }}>No itinerary yet</h2>
             <p className="text-muted-foreground mb-6 max-w-sm mx-auto animate-slide-up-fade" style={{ animationDelay: "0.3s" }}>
-              Chat with TripMap Planner to create a travel plan. Your itinerary will appear here once generated.
+              Chat with TripMap Planner.ai to create a travel plan. Your itinerary will appear here once generated.
             </p>
             <Button onClick={() => navigate("/")} className="rounded-2xl earth-gradient shadow-lg hover:scale-105 transition-transform duration-300 animate-slide-up-fade" style={{ animationDelay: "0.45s" }}>
               Start Planning

@@ -155,7 +155,7 @@ export default function Index() {
             <Logo size={42} />
           </div>
           <div>
-            <h1 className="text-lg font-display font-bold text-foreground leading-none">TripMap Planner</h1>
+            <h1 className="text-lg font-display font-bold text-foreground leading-none">TripMap Planner.ai</h1>
             <p className="text-xs text-foreground/50">AI-powered travel planning</p>
           </div>
         </div>

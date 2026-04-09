@@ -21,7 +21,7 @@ function formatItineraryText(it: ItineraryData): string {
     if (leg.cost > 0) text += `   💰 ${sym}${leg.cost}\n`;
     text += "\n";
   });
-  text += `━━━━━━━━━━━━━━━\n💰 Total: ${sym}${it.totalCost}\n\nPlanned with TripMap Planner ✈️`;
+  text += `━━━━━━━━━━━━━━━\n💰 Total: ${sym}${it.totalCost}\n\nPlanned with TripMap Planner.ai ✈️`;
   return text;
 }
 
