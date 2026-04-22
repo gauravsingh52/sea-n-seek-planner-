@@ -27,7 +27,12 @@ export const useProfile = () => {
   // For anonymous users, don't fetch profile
   useEffect(() => {
     if (!user || user.user_metadata?.is_anonymous) {
-      setProfile(null);
+      const cachedProfile = localStorage.getItem('userProfile');
+      if (cachedProfile) {
+        setProfile(JSON.parse(cachedProfile));
+      } else {
+        setProfile(null);
+      }
       setLoading(false);
       return;
     }
@@ -48,8 +53,13 @@ export const useProfile = () => {
         .eq('id', user.id)
         .single();
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Supabase fetch error:', fetchError);
+        throw new Error(`Failed to fetch profile: ${fetchError.message}`);
+      }
+
       setProfile(data);
+      localStorage.setItem('userProfile', JSON.stringify(data)); // Cache profile data
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch profile';
       setError(errorMessage);

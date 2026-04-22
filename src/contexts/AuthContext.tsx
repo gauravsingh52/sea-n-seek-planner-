@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User } from '@supabase/supabase-js';
+import Cookies from 'js-cookie';
 
 interface AuthContextType {
   user: User | null;
@@ -10,9 +11,12 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Create a mock anonymous user with persistent ID
 const createAnonymousUser = (): User => {
-  const userId = localStorage.getItem('anonUserId') || `anon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-  localStorage.setItem('anonUserId', userId);
-  
+  let userId = Cookies.get('anonUserId');
+  if (!userId) {
+    userId = `anon-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    Cookies.set('anonUserId', userId, { expires: 7 }); // Set cookie to expire in 7 days
+  }
+
   return {
     id: userId,
     aud: 'authenticated',
