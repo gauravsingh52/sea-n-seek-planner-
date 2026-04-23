@@ -141,6 +141,7 @@ export function useChat() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
           "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({
@@ -149,9 +150,9 @@ export function useChat() {
         }),
       });
 
-      // Fallback: if we get a 401 or auth-related error, try with different headers
+      // Fallback: if we get a 401 or auth-related error, try without auth headers
       if (!resp.ok && resp.status === 401) {
-        console.warn("Auth error, retrying without auth headers");
+        console.warn("Auth error, retrying with just Content-Type header");
         resp = await fetch(CHAT_URL, {
           method: "POST",
           headers: {
