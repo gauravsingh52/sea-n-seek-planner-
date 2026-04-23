@@ -142,6 +142,7 @@ export function useChat() {
         headers: {
           "Content-Type": "application/json",
           "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
         body: JSON.stringify({
           messages: apiMessages,
@@ -151,7 +152,9 @@ export function useChat() {
 
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({ error: "Request failed" }));
-        throw new Error(errData.error || `Error ${resp.status}`);
+        const errorMsg = errData.error || errData.message || `Error ${resp.status}`;
+        console.error("Chat API Error:", { status: resp.status, error: errorMsg, body: errData });
+        throw new Error(errorMsg);
       }
 
       if (!resp.body) throw new Error("No response body");

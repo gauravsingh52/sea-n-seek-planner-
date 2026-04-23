@@ -1,4 +1,4 @@
-import { serve } from  ;
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -200,12 +200,32 @@ You MUST ALWAYS include the \`\`\`itinerary-json block at the end of EVERY respo
 If the user's message contains ANY comparison intent (compare, vs, options, alternatives, which is better, budget vs comfort), you MUST output 2-3 SEPARATE \`\`\`itinerary-json blocks — one per option. NEVER merge them into one block.`;
 
 serve(async (req) => {
+  // Handle CORS
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Allow unauthenticated requests - this endpoint is public
+  if (req.method !== "POST") {
+    return new Response(
+      JSON.stringify({ error: "Method not allowed" }),
+      { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+
   try {
-    const { messages, settings } = await req.json();
+    let messages, settings;
+    
+    try {
+      const body = await req.json();
+      messages = body.messages;
+      settings = body.settings;
+    } catch (e) {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(
