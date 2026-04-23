@@ -141,8 +141,6 @@ export function useChat() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-          "apikey": import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
         },
         body: JSON.stringify({
           messages: apiMessages,
@@ -150,25 +148,20 @@ export function useChat() {
         }),
       });
 
-      // Fallback: if we get a 401 or auth-related error, try without auth headers
-      if (!resp.ok && resp.status === 401) {
-        console.warn("Auth error, retrying with just Content-Type header");
-        resp = await fetch(CHAT_URL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            messages: apiMessages,
-            settings: settingsPayload,
-          }),
-        });
-      }
-
+      // If request fails, log the error details
       if (!resp.ok) {
-        const errData = await resp.json().catch(() => ({ error: "Request failed" }));
-        const errorMsg = errData.error || errData.message || `Error ${resp.status}`;
-        console.error("Chat API Error:", { status: resp.status, error: errorMsg, body: errData });
+        const errText = await resp.text();
+        console.error("Chat endpoint error:", { status: resp.status, statusText: resp.statusText, body: errText });
+        
+        let errorMsg = `Error ${resp.status}`;
+        try {
+          const errData = JSON.parse(errText);
+          errorMsg = errData.error || errData.message || errorMsg;
+        } catch (e) {
+          // Text is not JSON, use as-is or generic error
+          errorMsg = errText || errorMsg;
+        }
+        
         throw new Error(errorMsg);
       }
 
