@@ -206,49 +206,59 @@ You MUST ALWAYS include the \`\`\`itinerary-json block at the end of EVERY respo
 ## FINAL COMPARISON REMINDER
 If the user's message contains ANY comparison intent (compare, vs, options, alternatives, which is better, budget vs comfort), you MUST output 2-3 SEPARATE \`\`\`itinerary-json blocks — one per option. NEVER merge them into one block.`;
 
-serve(async (req) => {
-  // Handle CORS
+serve(async (req: Request) => {
+  console.log(`[Chat] ${req.method} request received from ${req.headers.get('origin')}`);
+  
+  // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
+    console.log("[Chat] Handling OPTIONS request");
+    return new Response(null, { 
+      status: 200,
+      headers: corsHeaders 
+    });
   }
 
-  // Allow unauthenticated requests - this endpoint is public
+  // Only allow POST requests
   if (req.method !== "POST") {
+    console.log(`[Chat] Rejecting ${req.method} request`);
     return new Response(
-      JSON.stringify({ error: "Method not allowed" }),
+      JSON.stringify({ error: "Method not allowed. Use POST." }),
       { status: 405, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
 
   try {
+    console.log("[Chat] Parsing request body");
     let messages, settings;
     
     try {
       const body = await req.json();
       messages = body.messages;
       settings = body.settings;
-      console.log("Request received successfully");
+      console.log(`[Chat] Received ${messages?.length || 0} messages`);
     } catch (e) {
-      console.error("JSON parse error:", e);
+      console.error("[Chat] JSON parse error:", e);
       return new Response(
         JSON.stringify({ error: "Invalid JSON in request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    if (!messages || !Array.isArray(messages)) {
-      console.error("No messages in request");
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.error("[Chat] Invalid messages");
       return new Response(
-        JSON.stringify({ error: "messages array is required" }),
+        JSON.stringify({ error: "messages array is required and must not be empty" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
+      console.error("[Chat] LOVABLE_API_KEY not configured");
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    console.log("[Chat] Building system prompt with settings");
     // Build context from settings
     let langPrefix = "";
     let contextMsg = "";
@@ -273,6 +283,7 @@ serve(async (req) => {
 
     const systemContent = langPrefix + SYSTEM_PROMPT + contextMsg;
 
+    console.log("[Chat] Calling Lovable API");
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -291,33 +302,42 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
+      const statusText = response.statusText;
       if (response.status === 429) {
+        console.warn("[Chat] Rate limit exceeded");
         return new Response(
           JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       if (response.status === 402) {
+        console.warn("[Chat] AI credits exhausted");
         return new Response(
           JSON.stringify({ error: "AI credits exhausted. Please try again later." }),
           { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       const text = await response.text();
-      console.error("AI gateway error:", response.status, text);
+      console.error(`[Chat] AI gateway error: ${response.status} ${statusText}`, text);
       return new Response(
-        JSON.stringify({ error: "AI service error" }),
+        JSON.stringify({ error: `AI service error: ${statusText}` }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
+    console.log("[Chat] Streaming response");
     return new Response(response.body, {
       headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
     });
   } catch (e) {
-    console.error("chat error:", e);
+    const errorMessage = e instanceof Error ? e.message : String(e);
+    console.error("[Chat] Unhandled error:", errorMessage);
     return new Response(
-      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      JSON.stringify({ error: errorMessage || "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
