@@ -137,7 +137,7 @@ export function useChat() {
         lastMsg.content += "\n\n[SYSTEM HINT: User wants comparison — output 2-3 SEPARATE itinerary-json blocks, one per option]";
       }
 
-      const resp = await fetch(CHAT_URL, {
+      let resp = await fetch(CHAT_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -148,6 +148,21 @@ export function useChat() {
           settings: settingsPayload,
         }),
       });
+
+      // Fallback: if we get a 401 or auth-related error, try with different headers
+      if (!resp.ok && resp.status === 401) {
+        console.warn("Auth error, retrying without auth headers");
+        resp = await fetch(CHAT_URL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            messages: apiMessages,
+            settings: settingsPayload,
+          }),
+        });
+      }
 
       if (!resp.ok) {
         const errData = await resp.json().catch(() => ({ error: "Request failed" }));

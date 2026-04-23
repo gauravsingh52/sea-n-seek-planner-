@@ -1,7 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-// @auth bypass
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -222,7 +220,9 @@ serve(async (req) => {
       const body = await req.json();
       messages = body.messages;
       settings = body.settings;
+      console.log("Request received successfully");
     } catch (e) {
+      console.error("JSON parse error:", e);
       return new Response(
         JSON.stringify({ error: "Invalid JSON in request body" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -230,6 +230,7 @@ serve(async (req) => {
     }
 
     if (!messages || !Array.isArray(messages)) {
+      console.error("No messages in request");
       return new Response(
         JSON.stringify({ error: "messages array is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
